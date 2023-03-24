@@ -3,8 +3,25 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+class Bandit:
+
+    def __init__(self, a_i, b_i):
+        self.a = a_i
+        self.b = b_i
+        self.mu_i = (self.b + self.a)/2
+        self.pulls = 0
+
+    def pull(self):
+        self.pulls += 1
+        return np.random.uniform(self.a, self.b)
+
+    def getpulls(self):
+        return self.pulls
+
+
 
 class MABagent:
+
     def __init__(self, cur_env):
         self.env_name = ['default_Env', 'Env2', 'Env3']
         if cur_env in self.env_name:
@@ -33,7 +50,7 @@ class MABagent:
 
         self.bandit_score = np.zeros((self.k,))  # total score of each arm
         self.bandit_ucb = np.zeros((self.k,))    # upper confidence bound of each arm
-        self.pulls = np.zeros((self.k,))         # num of arm pulls
+        # self.pulls = np.zeros((self.k,))         # num of arm pulls
         self.inst_score = np.zeros((self.T,))    # reward for round t
         self.best_score = np.zeros((self.T,))    # cumulative reward of best arm for round t
         self.alg_score = np.zeros((self.T,))     # cumulative reward for round t
@@ -101,34 +118,46 @@ class MABagent:
     def begin(self, bandit):
         # run each arm once
         for j in range(self.k):
-            score = np.random.binomial(1, p=bandit[j])                  # get a reward for arm j
+            score = bandit[j].pull()                  # get a reward for arm j
             self.inst_score[j] = self.best_score[j] = score             # record reward of algorithm at that instant
             self.bandit_score[j] += score                               # update the total score of arm j
-            self.pulls[j] += 1                                          # update how many times each arm was pulled
+            # self.pulls[j] += 1                                          # update how many times each arm was pulled
             # if we run ucb calculate ucb of each arm for the first rounds played
             if self.ucb:
-                self.bandit_ucb[j] = self.bandit_score[j] + np.sqrt(np.log(j + 1) / self.pulls[j])
+                self.bandit_ucb[j] = self.bandit_score[j] + np.sqrt(np.log(j + 1) / bandit[j].getpulls())
         # run the algorithm
         for i in range(self.k, self.T):
             arm = self.act()                                            # choose arm
-            score = np.random.binomial(1, p=bandit[arm])                # play arm
+            score = bandit[arm].pull()                # play arm
             # print('best arm: %d ' % arm)
             self.inst_score[i] = score
-            self.pulls[arm] += 1                                        # update how many times arm was pulled
-            self.bandit_score[arm] = ((self.bandit_score[arm] * self.pulls[arm] - 1) +
-                                      score) / self.pulls[arm]          # update the total score of best arm
+            # self.pulls[arm] += 1                                        # update how many times arm was pulled
+            self.bandit_score[arm] = ((self.bandit_score[arm] * bandit[arm].getpulls() - 1) +
+                                      score) / bandit[arm].getpulls()          # update the total score of best arm
             # if we run ucb also calculate the upper confidence bound of arm
             if self.ucb:
-                self.bandit_ucb[arm] = self.bandit_score[arm] + np.sqrt(np.log(i + 1) / self.pulls[arm])
+                self.bandit_ucb[arm] = self.bandit_score[arm] + np.sqrt(np.log(i + 1) / bandit[arm].getpulls())
 
     def run(self):
         # create the enviroment
-        bandit = np.random.random((self.k,))                            # generate success prob. for each arm
-        best = np.amax(bandit)                                          # best arm
-        print('best arm = %d' % np.argmax(bandit))
-        for i in range(self.k):
-            print('arm = %d: true mean = %f : ' % (i, bandit[i]))
+        # bandit = np.random.random((self.k,))                            # generate success prob. for each arm
+        # print('best arm = %d' % np.argmax(bandit))
 
+        # create the enviroment asked: reward that is uniformly distributed in [a_i, b_i].
+        bandit = []
+        for i in range(self.k):
+            a = np.random.uniform(0, 1)
+            b = np.random.uniform(0, 1)
+            while b == a:
+                b = np.random.uniform(0, 1)
+            if b < a:
+                temp = b
+                b = a
+                a = temp
+            bandit.append(Bandit(a, b))
+            print('arm = %d: range = (%f,%f) : ' % (i, a, b))
+
+        best = np.amax([obj.mu_i for obj in bandit]) # best arm is the arm with the bigest mu = a+b/2
         self.e_greedy = True
         # self.ucb = True
         self.begin(bandit)
