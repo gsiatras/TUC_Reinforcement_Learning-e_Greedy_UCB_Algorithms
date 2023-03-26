@@ -30,17 +30,19 @@ class MABagent:
             self.cur_env = 'default_Env'
 
         if self.cur_env == 'default_Env':
-            self.k = 50                             # number of arms
+            self.k = 10                             # number of arms
             self.T = 1000                           # horizon
-            self.epsilon_decay = 0.0005             # exponential decay rate
+            self.epsilon_decay = (self.k * np.log(self.T)) ** (-1/3) / self.T ** (-1/3)             # exponential decay rate
         elif self.cur_env == 'Env2':
             self.k = 10  # number of arms
             self.T = 3000  # horizon
-            self.epsilon_decay = 0.005             # exponential decay rate
+            self.epsilon_decay = (self.k * np.log(self.T)) ** (-1/3) / self.T ** (-1/3)             # exponential decay rate
         else:
             self.k = 30  # number of arms
             self.T = 5000  # horizon
-            self.epsilon_decay = 0.001  # exponential decay rate
+            self.epsilon_decay = (self.k * np.log(self.T)) ** (-1/3) / self.T ** (-1/3)  # exponential decay rate
+
+
 
         self.N = 20  # explore rounds
         self.epsilon = 1.0                      # exploration rate
@@ -114,6 +116,7 @@ class MABagent:
         # decision if ucb
         if self.ucb:
             return np.argmax(self.bandit_ucb)                          # return id of arm with highest ucb
+
 
     def begin(self, bandit):
         # run each arm once
