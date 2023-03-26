@@ -30,11 +30,11 @@ class MABagent:
             self.cur_env = 'default_Env'
 
         if self.cur_env == 'default_Env':
-            self.k = 10                             # number of arms
+            self.k = 50                             # number of arms
             self.T = 1000                           # horizon
             self.epsilon_decay = 0.0005             # exponential decay rate
         elif self.cur_env == 'Env2':
-            self.k = 20  # number of arms
+            self.k = 10  # number of arms
             self.T = 3000  # horizon
             self.epsilon_decay = 0.005             # exponential decay rate
         else:
@@ -74,7 +74,7 @@ class MABagent:
             else:
                 self.best_score[i] = best
 
-            self.regret[i] = (self.best_score[i] - self.alg_score[i]) / (i + 1)  # regret per iteration at round t
+            self.regret[i] = (self.best_score[i] - self.alg_score[i]) / (i + 1)   # regret per iteration at round t
 
     def grapher(self, regret_greedy, regret_ucb):
         plt.plot(np.arange(1, self.T + 1), regret_greedy)
@@ -124,7 +124,7 @@ class MABagent:
             # self.pulls[j] += 1                                          # update how many times each arm was pulled
             # if we run ucb calculate ucb of each arm for the first rounds played
             if self.ucb:
-                self.bandit_ucb[j] = self.bandit_score[j] + np.sqrt(np.log(j + 1) / bandit[j].getpulls())
+                self.bandit_ucb[j] = self.bandit_score[j] + np.sqrt(2*np.log(j + 1) / bandit[j].getpulls())
         # run the algorithm
         for i in range(self.k, self.T):
             arm = self.act()                                            # choose arm
@@ -136,7 +136,7 @@ class MABagent:
                                       score) / bandit[arm].getpulls()          # update the total score of best arm
             # if we run ucb also calculate the upper confidence bound of arm
             if self.ucb:
-                self.bandit_ucb[arm] = self.bandit_score[arm] + np.sqrt(np.log(i + 1) / bandit[arm].getpulls())
+                self.bandit_ucb[arm] = self.bandit_score[arm] + np.sqrt(2*np.log(i + 1) / bandit[arm].getpulls())
 
     def run(self):
         # create the enviroment
